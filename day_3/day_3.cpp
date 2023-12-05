@@ -5,69 +5,106 @@
 
 using namespace std;
 
+bool charIsDigit(int symbol) {
+    return ((symbol >= 48) && (symbol <= 57));
+}
+
+string getCompleteNumber(string line, int index, int direction) {
+    string num = "";
+    while (index >= 0 && index <= line.length()-1 && charIsDigit(line[index])) {
+        if (direction > 0) {
+            num += line[index];
+        } else {
+            num = line[index] + num;
+        }
+        index += direction;
+    }
+    return num;
+}
+// 76517756
 int getSumOfLegalValues(list<string> input_matrix) {
     int sum = 0;
     list<string>::iterator matrix_iter = input_matrix.begin();
     int last_index = (*matrix_iter).length()-1;
     bool is_valid_num = false;
+    int counter = 1;
     
     for (matrix_iter = input_matrix.begin(); matrix_iter != input_matrix.end(); matrix_iter++) {
+        cout << "------------------" << counter << "------------------"<< endl;
+        counter++;
         for (int x = 0; x < (*matrix_iter).length(); x++) {
             is_valid_num = false;
+            // unicode(42) = '*'
+            if ((*matrix_iter)[x] == 42) {
+                list<int> factors;
+                int num_index = x;
 
-            if ((*matrix_iter)[x] >= 48 && (*matrix_iter)[x] <= 57) {
-                string num = "";
-                num += (*matrix_iter)[x];
-                int num_indices[2];
-                num_indices[0] = x;
-                num_indices[1] = x;
-                int y = x+1;
-                // Get the complete number
-                while (((*matrix_iter)[y] >= 48) && ((*matrix_iter)[y] <= 57)) {
-                    num += (*matrix_iter)[y];
-                    num_indices[1] = y;
-                    y++;
-                }
-
-                // Check if symbol exists before number
-                if (num_indices[0] != 0) {
+                // Check if number exists before '*'
+                if (num_index != 0) {
                     // unicode(46) = '.'
-                    if ((*matrix_iter)[num_indices[0]-1] != 46) {
-                        is_valid_num = true;
+                    if (charIsDigit((*matrix_iter)[num_index-1])) {
+                        string number = getCompleteNumber(*matrix_iter, num_index - 1, -1);
+                        //cout << "number before: " << number << endl;
+                        factors.push_back(stoi(number));
                     }
                 }
-                // Check if symbol exists after number
-                if (num_indices[1] != last_index) {
-                    if ((*matrix_iter)[num_indices[1]+1] != 46) {
-                        is_valid_num = true;
+                // Check if number exists after '*'
+                if (num_index != last_index) {
+                    if (charIsDigit((*matrix_iter)[num_index+1])) {
+                        string number = getCompleteNumber(*matrix_iter, num_index + 1, 1);
+                        //cout << "number after: " << number << endl;
+                        factors.push_back(stoi(number));
                     }
                 }
-                // Check if symbol above number exists
+                // Check if number above '*' exists
                 if (matrix_iter != input_matrix.begin()) {
-                    list<string>::iterator prev_iter = matrix_iter;
-                    prev_iter--;
-
-                    for (int x = max(0, num_indices[0]-1); x <= min(last_index, num_indices[1]+1); x++) {
-                        if (((*prev_iter)[x] < 48 || (*prev_iter)[x] > 57) && (*prev_iter)[x] != 46) {
-                            is_valid_num = true;
+                    if (charIsDigit((*prev(matrix_iter,1))[x])) {
+                        string number = getCompleteNumber(*prev(matrix_iter, 1), x, -1);
+                        if (x < last_index) {
+                            number += getCompleteNumber(*prev(matrix_iter, 1), x+1, 1);
+                        }
+                        //cout << "number above: " << number << endl;
+                        factors.push_back(stoi(number));
+                    } else {
+                        if (charIsDigit((*prev(matrix_iter))[max(x-1, 0)])) {
+                            string number = getCompleteNumber(*prev(matrix_iter), x-1, -1);
+                            //cout << "number above: " << number << endl;
+                            factors.push_back(stoi(number));
+                        }
+                        if (charIsDigit((*prev(matrix_iter, 1))[min(x+1, last_index)])) {
+                            string number = getCompleteNumber(*prev(matrix_iter, 1), x+1, 1);
+                            //cout << "number above: " << number << endl;
+                            factors.push_back(stoi(number));
                         }
                     }
                 }
-                // Check if symbol under number exists
+                // Check if number under '*' exists
                 if (next(matrix_iter, 1) != input_matrix.end()) {
-                    list<string>::iterator next_iter = matrix_iter;
-                    next_iter++;
-
-                    for (int x = max(0, num_indices[0]-1); x <= min(last_index, num_indices[1]+1); x++) {
-                        if (((*next_iter)[x] < 48 || (*next_iter)[x] > 57) && (*next_iter)[x] != 46) {
-                            is_valid_num = true;
+                    if (charIsDigit((*next(matrix_iter,1))[x])) {
+                        string number = getCompleteNumber(*next(matrix_iter, 1), x, -1);
+                        if (x < last_index) {
+                            number += getCompleteNumber(*next(matrix_iter, 1), x+1, 1);
                         }
-                    }
+                        //cout << "number under: " << number << endl;
+                        factors.push_back(stoi(number));
+                    } else {
+                        if (charIsDigit((*next(matrix_iter))[max(x-1, 0)])) {
+                            string number = getCompleteNumber(*next(matrix_iter), x-1, -1);
+                            //cout << "number under: " << number << endl;
+                            factors.push_back(stoi(number));
+                        }
+                        if (charIsDigit((*next(matrix_iter, 1))[min(x+1, last_index)])) {
+                            string number = getCompleteNumber(*next(matrix_iter, 1), x+1, 1);
+                            //cout << "number under: " << number << endl;
+                            factors.push_back(stoi(number));
+                        }
+                    } 
                 }
-                if (is_valid_num) {
-                    sum += stoi(num);
+                if (factors.size() == 2) {
+                    cout << factors.front() << " * " << factors.back() << endl;
+                    sum += (factors.front() * factors.back());
                 }
-                x = y-1;
+                //cout << "#######" << endl;
             }
         }
     }
