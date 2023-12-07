@@ -12,26 +12,70 @@ struct MapEntry {
 	ulong dest_start;
 };
 
-int getLowestLocation(vector<ulong> *seeds, vector<vector<MapEntry>> maps) {
-	ulong lowest_location = ULONG_MAX;
-	for (ulong x = 0; x < (*seeds).size(); x += 2) {
-		ulong mapped_seed = seed;
-		cout << "Seed: " << seed << endl;
-		cout << "########" << endl;
-		for (vector<MapEntry> map : maps) {
-			for (MapEntry map_entry : map) {
-				if (mapped_seed >= map_entry.source_start && mapped_seed <= map_entry.source_end) {
-					mapped_seed = map_entry.dest_start + mapped_seed - map_entry.source_start;
-					break;
-				}
-			}
-			cout << mapped_seed << endl;
-		}
-		if (mapped_seed < lowest_location) {
-			lowest_location = mapped_seed;
-		}
+struct SeedIntervall {
+    ulong start;
+    ulong end;
+};
+
+vector<SeedIntervall> structureSeeds(vector<ulong> seeds) {
+    vector<SeedIntervall> seed_intervalls;
+    for (int x = 0; x < seeds.size(); x += 2) {
+        seed_intervalls.push_back(SeedIntervall{seeds[x], seeds[x] + seeds[x+1]-1});
+    }
+    return seed_intervalls;
+}
+
+vector<SeedIntervall> mergeSeeds(vector<ulong> seeds) {
+    vector<SeedIntervall> rest_seeds = structureSeeds(seeds);
+    vector<SeedIntervall> merged_seeds;
+    merged_seeds.push_back(rest_seeds.back());
+    rest_seeds.pop_back();
+    for (int y = 0; y < merged_seeds.size() && rest_seeds.size() != 0; y++){
+        for (int x = 0; x < rest_seeds.size(); x++) {
+            if (rest_seeds[x].start <= merged_seeds[y].end && rest_seeds[x].end >= merged_seeds[y].start) {
+                merged_seeds[y].start = min(merged_seeds[y].start, rest_seeds[x].start);
+                merged_seeds[y].end = max(merged_seeds[y].end, rest_seeds[x].end);
+                rest_seeds.erase(rest_seeds.begin()+x);
+                x = -1;
+            }
+        }
+        if (rest_seeds.size() != 0) {
+            merged_seeds.push_back(rest_seeds.back());
+            rest_seeds.pop_back();
+        }
+    }
+    return merged_seeds;
+}
+
+void resolveSeedIntervall(vector<vector<MapEntry>> maps, int map_index, SeedIntervall seed_intervall, ulong *lowest_location) {
+    for (int x = map_index; x < maps.size(); x++) {
+        for (MapEntry map_entry : maps[x]) {
+            if (seed_intervall.start >= map_entry.source_start && seed_intervall.start <= map_entry.source_end) {
+                seed_intervall.start = map_entry.dest_start + seed_intervall.start - map_entry.source_start;
+                if (seed_intervall.end > map_entry.source_end) {
+                    resolveSeedIntervall(maps, x, SeedIntervall{map_entry.source_end +1, seed_intervall.end}, lowest_location);
+                    seed_intervall.end = map_entry.source_end;
+                }
+                seed_intervall.end = map_entry.dest_start + seed_intervall.end - map_entry.source_start;
+                break;
+            }
+        }
+    }
+    if (seed_intervall.start < *lowest_location) {
+        *lowest_location = seed_intervall.start;
+    }
+}
+
+ulong getLowestLocation(vector<ulong> *seeds, vector<vector<MapEntry>> maps) {
+	ulong out_lowest_location = ULONG_MAX;
+    vector<SeedIntervall> merged_seeds = mergeSeeds(*seeds);
+	for (ulong x = 0; x < merged_seeds.size(); x++) {
+        cout << "Seed Intervall: " << merged_seeds[x].start << " - " << merged_seeds[x].end << endl;
+        cout << "########" << endl;
+        resolveSeedIntervall(maps, x, merged_seeds[x], &out_lowest_location);
+
 	}
-	return lowest_location;
+	return out_lowest_location;
 }
 
 vector<ulong> getSeedsVector(string line) {
@@ -68,8 +112,13 @@ vector<MapEntry> parseMap(ifstream *file, string delim) {
 		string range = rest.substr(source_range_start.length());
 		MapEntry map_entry;
 		map_entry.source_start = stoul(source_range_start);
-		map_entry.source_end = stoul(source_range_start) + stoul(range);
+		map_entry.source_end = stoul(source_range_start) + stoul(range)-1;
 		map_entry.dest_start = stoul(dest_range_start);
+        //if (delim == "water") {
+            //cout << "Entry source start: " << map_entry.source_start << endl;
+            //cout << "Entry source end: " << map_entry.source_end << endl;
+            //cout << "Entry dest. start: " << map_entry.dest_start << endl;
+        //}
 		map_entries.push_back(map_entry);
 	}
 	return map_entries;
