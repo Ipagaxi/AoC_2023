@@ -104,7 +104,6 @@ int getSumOfLegalValues(list<string> input_matrix) {
                     cout << factors.front() << " * " << factors.back() << endl;
                     sum += (factors.front() * factors.back());
                 }
-                //cout << "#######" << endl;
             }
         }
     }
