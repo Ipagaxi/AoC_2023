@@ -6,45 +6,40 @@
 
 using namespace std;
 
-struct Race {
-	ulong time;
-	ulong distance;
-};
 
-
-
-vector<Race> parseTimesIntoRaceVec(string line) {
-	vector<Race> races;
+ulong getTime(string line) {
 	regex word_regex("(\\d+)");
+	string time = "";
     auto words_begin = 
         sregex_iterator(line.begin(), line.end(), word_regex);
     auto words_end = sregex_iterator();
 	for (sregex_iterator i = words_begin; i != words_end; ++i) {
-		races.push_back(Race{stoul((*i).str())});
+		time += (*i).str();
 	}
 
-	return races;
+	return stoul(time);
 }
 
-vector<Race> parseDistancesIntoRaceVec(string line, vector<Race> races) {
+ulong getDistance(string line) {
+	string distance = "";
 	regex word_regex("(\\d+)");
     auto words_begin = 
         sregex_iterator(line.begin(), line.end(), word_regex);
     auto words_end = sregex_iterator();
 	int x = 0;
 	for (sregex_iterator i = words_begin; i != words_end; ++i) {
-		races[x].distance = stoul((*i).str());
+		distance += (*i).str();
 		x++;
 	}
-	return races;
+	return stoul(distance);
 }
 
-ulong getNumOfWins(Race race) {
-	int reach_dist;
-	int num_wins = 0;
-	for (int x = 1; x <= race.time; x++) {
-		reach_dist = (race.time - x) * x;
-		if (reach_dist > race.distance) {
+ulong getNumOfWins(ulong time, ulong distance) {
+	ulong reach_dist;
+	ulong num_wins = 0;
+	for (int x = 1; x <= time; x++) {
+		reach_dist = (time - x) * x;
+		if (reach_dist > distance) {
 			num_wins++;
 		}
 	}
@@ -57,12 +52,10 @@ ulong getSolvedValue() {
 	ulong solution = 1;
 	if (file.is_open()) {
 		getline(file, line);
-		vector<Race> races = parseTimesIntoRaceVec(line);
+		ulong time = getTime(line);
 		getline(file, line);
-		races = parseDistancesIntoRaceVec(line, races);
-		for (Race race : races) {
-			solution *= getNumOfWins(race);
-		}
+		ulong distance = getDistance(line);
+		solution = getNumOfWins(time, distance);
 		file.close();
 	} else {
 		cout << "Unable to open file!" << endl;
