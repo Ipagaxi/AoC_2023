@@ -70,8 +70,6 @@ ulong getLowestLocation(vector<ulong> *seeds, vector<vector<MapEntry>> maps) {
 	ulong out_lowest_location = ULONG_MAX;
     vector<SeedIntervall> merged_seeds = mergeSeeds(*seeds);
 	for (ulong x = 0; x < merged_seeds.size(); x++) {
-        cout << "Seed Intervall: " << merged_seeds[x].start << " - " << merged_seeds[x].end << endl;
-        cout << "########" << endl;
         resolveSeedIntervall(maps, x, merged_seeds[x], &out_lowest_location);
 
 	}
@@ -114,11 +112,6 @@ vector<MapEntry> parseMap(ifstream *file, string delim) {
 		map_entry.source_start = stoul(source_range_start);
 		map_entry.source_end = stoul(source_range_start) + stoul(range)-1;
 		map_entry.dest_start = stoul(dest_range_start);
-        //if (delim == "water") {
-            //cout << "Entry source start: " << map_entry.source_start << endl;
-            //cout << "Entry source end: " << map_entry.source_end << endl;
-            //cout << "Entry dest. start: " << map_entry.dest_start << endl;
-        //}
 		map_entries.push_back(map_entry);
 	}
 	return map_entries;
